@@ -6,6 +6,7 @@ import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/error';
 import healthRoutes from './routes/health.routes';
 import aiRoutes from './routes/ai.routes';
+import authRoutes from './routes/auth.routes';
 
 export function createExpressApp(): Express {
   const app = express();
@@ -44,9 +45,10 @@ export function createExpressApp(): Express {
   // Global JWT & Auth context middleware
   app.use(authMiddleware);
 
-  // Mount System Health & AI Model Host Endpoints
+  // Mount System Health, Auth, and AI Model Host Endpoints
   app.use('/api', healthRoutes);
   app.use('/api', aiRoutes);
+  app.use('/api', authRoutes);
 
   return app;
 }

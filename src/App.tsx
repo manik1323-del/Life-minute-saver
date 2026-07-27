@@ -239,8 +239,8 @@ function AppContent() {
     );
   }
 
-  // Auth gate: show login screen unless demo mode is active or user is authenticated
-  if (!DEMO_MODE && !isAuthenticated) {
+  // Auth gate: show login screen when user is not authenticated
+  if (!isAuthenticated) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-theme-bg flex items-center justify-center text-theme-text-main">Loading authentication...</div>}>
         <AuthScreen />
