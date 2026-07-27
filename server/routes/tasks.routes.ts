@@ -39,11 +39,16 @@ const createNotification = (db: any, userId: string, title: string, message: str
  * Host: GET /api/tasks
  */
 router.get('/tasks', (req: Request, res: Response) => {
+  console.log('[TASK DEBUG 7] GET /api/tasks - Auth header:', req.headers.authorization);
   const userId = getAuthorizedUserId(req);
+  console.log('[TASK DEBUG 7] GET /api/tasks - getAuthorizedUserId() returned:', userId);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const db = readDb();
+  console.log('[TASK DEBUG 8] GET /api/tasks - Total tasks in db.json:', db.tasks.length);
   const userTasks = db.tasks.filter((t) => t.userId === userId);
+  console.log('[TASK DEBUG 8] GET /api/tasks - Tasks matching userId:', userTasks.length);
+  console.log('[TASK DEBUG 9] GET /api/tasks - Returning JSON array length:', userTasks.length);
   return res.json(userTasks);
 });
 
@@ -52,7 +57,9 @@ router.get('/tasks', (req: Request, res: Response) => {
  * Host: POST /api/tasks
  */
 router.post('/tasks', async (req: Request, res: Response) => {
+  console.log('[TASK DEBUG 1] POST /api/tasks - Auth header:', req.headers.authorization);
   const userId = getAuthorizedUserId(req);
+  console.log('[TASK DEBUG 2] POST /api/tasks - getAuthorizedUserId() returned:', userId);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const {
@@ -120,10 +127,14 @@ router.post('/tasks', async (req: Request, res: Response) => {
     updatedAt: new Date().toISOString()
   };
 
+  console.log('[TASK DEBUG 3] POST /api/tasks - Complete newTask object before saving:', JSON.stringify(newTask, null, 2));
+  console.log('[TASK DEBUG 4] Executing db.tasks.push(newTask)...');
   db.tasks.push(newTask);
   createActivityLog(db, userId, 'Created task', `Added task "${newTask.title}"`, organizationId, teamId, projectId);
   createNotification(db, userId, 'New Task Created', `Task "${newTask.title}" was added to your workflow.`, 'success');
   writeDb(db);
+  console.log('[TASK DEBUG 5] Total number of tasks in db.json after saving:', db.tasks.length);
+  console.log('[TASK DEBUG 6] Response payload returned by POST /api/tasks:', JSON.stringify(newTask));
 
   return res.json(newTask);
 });

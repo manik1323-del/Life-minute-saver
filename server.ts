@@ -897,18 +897,24 @@ async function startServer() {
 
   // Get Tasks
   app.get("/api/tasks", (req, res) => {
-    const authHeader = req.headers.authorization;
-    const userId = authHeader?.replace("Bearer ", "");
+    console.log('[TASK DEBUG 7] GET /api/tasks - Auth header:', req.headers.authorization);
+    const userId = getAuthorizedUserId(req);
+    console.log('[TASK DEBUG 7] GET /api/tasks - getAuthorizedUserId() returned:', userId);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const db = readDb();
+    console.log('[TASK DEBUG 8] GET /api/tasks - Total tasks in db.json:', db.tasks.length);
     const userTasks = db.tasks.filter(t => t.userId === userId);
+    console.log('[TASK DEBUG 8] GET /api/tasks - Tasks matching userId:', userTasks.length);
+    console.log('[TASK DEBUG 9] GET /api/tasks - Returning JSON array length:', userTasks.length);
     return res.json(userTasks);
   });
 
   // Create Task
   app.post("/api/tasks", async (req, res) => {
+    console.log('[TASK DEBUG 1] POST /api/tasks - Auth header:', req.headers.authorization);
     const userId = getAuthorizedUserId(req);
+    console.log('[TASK DEBUG 2] POST /api/tasks - getAuthorizedUserId() returned:', userId);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const {
@@ -975,12 +981,14 @@ async function startServer() {
       newTask.progress = subtaskRecords.filter(s => s.completed).reduce((sum, s) => sum + s.weightage, 0);
     }
 
+    console.log('[TASK DEBUG 3] POST /api/tasks - Complete newTask object before saving:', JSON.stringify(newTask, null, 2));
+    console.log('[TASK DEBUG 4] Executing db.tasks.push(newTask)...');
     db.tasks.push(newTask);
     createActivityLog(db, userId, 'Created task', `Added task "${newTask.title}"`, newTask.organizationId, newTask.teamId, newTask.projectId);
     writeDb(db);
 
-    await syncTaskChanges(db, userId, taskId);
-    writeDb(db);
+    console.log('[TASK DEBUG 5] Total tasks in db.json after saving:', db.tasks.length);
+    console.log('[TASK DEBUG 6] Response payload returned by POST /api/tasks:', JSON.stringify(newTask));
 
     sendNotification(db, userId, 'New Task Created', `Task “${newTask.title}” was added to your workflow.`, 'success');
 
