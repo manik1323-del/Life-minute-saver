@@ -1,9 +1,72 @@
 import { Router, Request, Response } from 'express';
 import { getAuthorizedUserId } from '../middleware/auth.js';
 import { readDb, writeDb } from '../db.js';
+import { supabase } from '../supabase.js';
 import { Task, Subtask } from '../../src/types.js';
 
 const router = Router();
+
+function toSupabaseTask(task: Task) {
+  return {
+    id: task.id,
+    user_id: task.userId,
+    title: task.title,
+    description: task.description || '',
+    deadline: task.deadline || new Date().toISOString(),
+    priority: task.priority || 'Medium',
+    status: task.status || 'Pending',
+    estimated_time: task.estimatedTime || 60,
+    category: task.category || 'Work',
+    tags: task.tags || [],
+    difficulty: task.difficulty || 'Medium',
+    preferred_working_time: task.preferredWorkingTime || null,
+    is_recurring: !!task.isRecurring,
+    recurring_frequency: task.recurringFrequency || null,
+    progress: task.progress || 0,
+    priority_score: task.priorityScore || 50,
+    deadline_risk: task.deadlineRisk || 30,
+    estimated_effort: task.estimatedEffort || null,
+    ai_suggested_priority: task.aiSuggestedPriority || null,
+    ai_suggested_time_block: task.aiSuggestedTimeBlock || null,
+    project_id: task.projectId || null,
+    team_id: task.teamId || null,
+    organization_id: task.organizationId || null,
+    missed_task_history: !!task.missedTaskHistory,
+    created_at: task.createdAt || new Date().toISOString(),
+    updated_at: task.updatedAt || new Date().toISOString(),
+  };
+}
+
+function fromSupabaseTask(row: any): Task {
+  return {
+    id: row.id,
+    userId: row.user_id || row.userId,
+    title: row.title,
+    description: row.description || '',
+    deadline: row.deadline || new Date().toISOString(),
+    priority: row.priority || 'Medium',
+    status: row.status || 'Pending',
+    estimatedTime: Number(row.estimated_time ?? row.estimatedTime) || 60,
+    category: row.category || 'Work',
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    difficulty: row.difficulty || 'Medium',
+    preferredWorkingTime: row.preferred_working_time || row.preferredWorkingTime,
+    isRecurring: !!(row.is_recurring ?? row.isRecurring),
+    recurringFrequency: row.recurring_frequency || row.recurringFrequency,
+    progress: Number(row.progress) || 0,
+    priorityScore: Number(row.priority_score ?? row.priorityScore) || 50,
+    deadlineRisk: Number(row.deadline_risk ?? row.deadlineRisk) || 30,
+    estimatedEffort: row.estimated_effort ?? row.estimatedEffort,
+    aiSuggestedPriority: row.ai_suggested_priority || row.aiSuggestedPriority,
+    aiSuggestedTimeBlock: row.ai_suggested_time_block || row.aiSuggestedTimeBlock,
+    projectId: row.project_id || row.projectId,
+    teamId: row.team_id || row.teamId,
+    organizationId: row.organization_id || row.organizationId,
+    missedTaskHistory: !!(row.missed_task_history ?? row.missedTaskHistory),
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
+  };
+}
 
 const createActivityLog = (db: any, userId: string, action: string, detail: string, organizationId?: string, teamId?: string, projectId?: string) => {
   if (!db.activityLogs) db.activityLogs = [];
@@ -38,17 +101,26 @@ const createNotification = (db: any, userId: string, title: string, message: str
  * Get User Tasks
  * Host: GET /api/tasks
  */
-router.get('/tasks', (req: Request, res: Response) => {
-  console.log('[TASK DEBUG 7] GET /api/tasks - Auth header:', req.headers.authorization);
+router.get('/tasks', async (req: Request, res: Response) => {
   const userId = getAuthorizedUserId(req);
-  console.log('[TASK DEBUG 7] GET /api/tasks - getAuthorizedUserId() returned:', userId);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (!error && data && data.length > 0) {
+      const tasks = data.map(fromSupabaseTask);
+      return res.json(tasks);
+    }
+  } catch (err) {
+    console.warn('Supabase fetch failed, falling back to db.json:', err);
+  }
+
   const db = readDb();
-  console.log('[TASK DEBUG 8] GET /api/tasks - Total tasks in db.json:', db.tasks.length);
   const userTasks = db.tasks.filter((t) => t.userId === userId);
-  console.log('[TASK DEBUG 8] GET /api/tasks - Tasks matching userId:', userTasks.length);
-  console.log('[TASK DEBUG 9] GET /api/tasks - Returning JSON array length:', userTasks.length);
   return res.json(userTasks);
 });
 
@@ -57,9 +129,7 @@ router.get('/tasks', (req: Request, res: Response) => {
  * Host: POST /api/tasks
  */
 router.post('/tasks', async (req: Request, res: Response) => {
-  console.log('[TASK DEBUG 1] POST /api/tasks - Auth header:', req.headers.authorization);
   const userId = getAuthorizedUserId(req);
-  console.log('[TASK DEBUG 2] POST /api/tasks - getAuthorizedUserId() returned:', userId);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const {
@@ -73,9 +143,7 @@ router.post('/tasks', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Task title is required.' });
   }
 
-  const db = readDb();
   const taskId = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-
   let progress = 0;
   const subtaskRecords: Subtask[] = [];
 
@@ -94,7 +162,6 @@ router.post('/tasks', async (req: Request, res: Response) => {
         order: idx + 1
       });
     });
-    db.subtasks.push(...subtaskRecords);
     progress = subtaskRecords.filter(s => s.completed).reduce((sum, s) => sum + s.weightage, 0);
   }
 
@@ -127,14 +194,23 @@ router.post('/tasks', async (req: Request, res: Response) => {
     updatedAt: new Date().toISOString()
   };
 
-  console.log('[TASK DEBUG 3] POST /api/tasks - Complete newTask object before saving:', JSON.stringify(newTask, null, 2));
-  console.log('[TASK DEBUG 4] Executing db.tasks.push(newTask)...');
+  // 1. Try Supabase Insert
+  try {
+    const supabasePayload = toSupabaseTask(newTask);
+    await supabase.from('tasks').insert(supabasePayload);
+  } catch (sbErr) {
+    console.warn('Supabase insert task failed, saved to local db:', sbErr);
+  }
+
+  // 2. Save to local db.json as sync backup
+  const db = readDb();
   db.tasks.push(newTask);
+  if (subtaskRecords.length > 0) {
+    db.subtasks.push(...subtaskRecords);
+  }
   createActivityLog(db, userId, 'Created task', `Added task "${newTask.title}"`, organizationId, teamId, projectId);
   createNotification(db, userId, 'New Task Created', `Task "${newTask.title}" was added to your workflow.`, 'success');
   writeDb(db);
-  console.log('[TASK DEBUG 5] Total number of tasks in db.json after saving:', db.tasks.length);
-  console.log('[TASK DEBUG 6] Response payload returned by POST /api/tasks:', JSON.stringify(newTask));
 
   return res.json(newTask);
 });
@@ -143,7 +219,7 @@ router.post('/tasks', async (req: Request, res: Response) => {
  * Update Task
  * Host: PUT /api/tasks/:id
  */
-router.put('/tasks/:id', (req: Request, res: Response) => {
+router.put('/tasks/:id', async (req: Request, res: Response) => {
   const userId = getAuthorizedUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -151,18 +227,39 @@ router.put('/tasks/:id', (req: Request, res: Response) => {
   const db = readDb();
   const taskIdx = db.tasks.findIndex((t) => t.id === taskId && t.userId === userId);
 
-  if (taskIdx === -1) {
-    return res.status(404).json({ error: 'Task not found.' });
-  }
-
-  const updatedTask = {
-    ...db.tasks[taskIdx],
+  const updatedTask: Task = {
+    ...(taskIdx !== -1 ? db.tasks[taskIdx] : {
+      id: taskId,
+      userId,
+      title: 'Updated Task',
+      description: '',
+      deadline: new Date().toISOString(),
+      priority: 'Medium',
+      status: 'Pending',
+      estimatedTime: 60,
+      category: 'Work',
+      tags: [],
+      difficulty: 'Medium',
+      progress: 0,
+      priorityScore: 50,
+      deadlineRisk: 30,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }),
     ...req.body,
     updatedAt: new Date().toISOString()
   };
 
-  db.tasks[taskIdx] = updatedTask;
-  writeDb(db);
+  if (taskIdx !== -1) {
+    db.tasks[taskIdx] = updatedTask;
+    writeDb(db);
+  }
+
+  try {
+    await supabase.from('tasks').update(toSupabaseTask(updatedTask)).eq('id', taskId);
+  } catch (err) {
+    console.warn('Supabase update failed:', err);
+  }
 
   return res.json(updatedTask);
 });
@@ -171,7 +268,7 @@ router.put('/tasks/:id', (req: Request, res: Response) => {
  * Update Task Status
  * Host: PATCH /api/tasks/:id/status
  */
-router.patch('/tasks/:id/status', (req: Request, res: Response) => {
+router.patch('/tasks/:id/status', async (req: Request, res: Response) => {
   const userId = getAuthorizedUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -180,40 +277,49 @@ router.patch('/tasks/:id/status', (req: Request, res: Response) => {
   const db = readDb();
   const taskIdx = db.tasks.findIndex((t) => t.id === taskId && t.userId === userId);
 
-  if (taskIdx === -1) {
-    return res.status(404).json({ error: 'Task not found.' });
+  if (taskIdx !== -1) {
+    db.tasks[taskIdx].status = status;
+    if (status === 'Completed') {
+      db.tasks[taskIdx].progress = 100;
+    }
+    db.tasks[taskIdx].updatedAt = new Date().toISOString();
+    writeDb(db);
   }
 
-  db.tasks[taskIdx].status = status;
-  if (status === 'Completed') {
-    db.tasks[taskIdx].progress = 100;
+  try {
+    await supabase.from('tasks').update({
+      status,
+      progress: status === 'Completed' ? 100 : undefined,
+      updated_at: new Date().toISOString()
+    }).eq('id', taskId);
+  } catch (err) {
+    console.warn('Supabase status patch failed:', err);
   }
-  db.tasks[taskIdx].updatedAt = new Date().toISOString();
 
-  writeDb(db);
-  return res.json(db.tasks[taskIdx]);
+  return res.json(taskIdx !== -1 ? db.tasks[taskIdx] : { id: taskId, status });
 });
 
 /**
  * Delete Task
  * Host: DELETE /api/tasks/:id
  */
-router.delete('/tasks/:id', (req: Request, res: Response) => {
+router.delete('/tasks/:id', async (req: Request, res: Response) => {
   const userId = getAuthorizedUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const taskId = req.params.id;
-  const db = readDb();
-  const initialLength = db.tasks.length;
 
-  db.tasks = db.tasks.filter((t) => !(t.id === taskId && t.userId === userId));
-  db.subtasks = db.subtasks.filter((s) => s.taskId !== taskId);
-
-  if (db.tasks.length === initialLength) {
-    return res.status(404).json({ error: 'Task not found.' });
+  try {
+    await supabase.from('tasks').delete().eq('id', taskId);
+  } catch (err) {
+    console.warn('Supabase delete failed:', err);
   }
 
+  const db = readDb();
+  db.tasks = db.tasks.filter((t) => !(t.id === taskId && t.userId === userId));
+  db.subtasks = db.subtasks.filter((s) => s.taskId !== taskId);
   writeDb(db);
+
   return res.json({ success: true, id: taskId });
 });
 
