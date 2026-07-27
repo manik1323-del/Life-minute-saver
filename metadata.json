@@ -1,0 +1,6 @@
+{
+  "name": "Last-Minute Life Saver",
+  "description": "An AI-powered productivity coach and smart deadline scheduler that proactively helps users stay on top of work, predicts missed deadlines, auto-breaks down complex tasks, and dynamically re-plans schedules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
