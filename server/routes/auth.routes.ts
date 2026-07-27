@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { readDb, writeDb, seedUserData } from '../db';
-import { JWT_SECRET, JWT_REFRESH_SECRET, getAuthorizedUserId } from '../middleware/auth';
-import { User, Organization, Team, Project } from '../../src/types';
+import { readDb, writeDb, seedUserData } from '../db.js';
+import { JWT_SECRET, JWT_REFRESH_SECRET, getAuthorizedUserId } from '../middleware/auth.js';
+import { User, Organization, Team, Project } from '../../src/types.js';
 
 const router = Router();
 

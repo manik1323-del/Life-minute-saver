@@ -2,12 +2,12 @@ import express, { Express } from 'express';
 import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
-import { authMiddleware } from './middleware/auth';
-import { errorHandler } from './middleware/error';
-import healthRoutes from './routes/health.routes';
-import aiRoutes from './routes/ai.routes';
-import authRoutes from './routes/auth.routes';
-import tasksRoutes from './routes/tasks.routes';
+import { authMiddleware } from './middleware/auth.js';
+import { errorHandler } from './middleware/error.js';
+import healthRoutes from './routes/health.routes.js';
+import aiRoutes from './routes/ai.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import tasksRoutes from './routes/tasks.routes.js';
 
 export function createExpressApp(): Express {
   const app = express();
@@ -51,6 +51,9 @@ export function createExpressApp(): Express {
   app.use('/api', aiRoutes);
   app.use('/api', authRoutes);
   app.use('/api', tasksRoutes);
+
+  // Global Error Handler
+  app.use(errorHandler);
 
   return app;
 }

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { getAuthorizedUserId } from '../middleware/auth';
-import { readDb, writeDb } from '../db';
-import { Task, Subtask } from '../../src/types';
+import { getAuthorizedUserId } from '../middleware/auth.js';
+import { readDb, writeDb } from '../db.js';
+import { Task, Subtask } from '../../src/types.js';
 
 const router = Router();
 
@@ -125,7 +125,6 @@ router.post('/tasks', async (req: Request, res: Response) => {
   createNotification(db, userId, 'New Task Created', `Task "${newTask.title}" was added to your workflow.`, 'success');
   writeDb(db);
 
-  // Non-blocking response: Return created task immediately so UI updates in <10ms!
   return res.json(newTask);
 });
 
