@@ -127,11 +127,8 @@ export default function TasksScreen({ tasks, onRefreshTasks }: TasksScreenProps)
   const totalWeight = newSubtasks.reduce((sum, s) => sum + (Number(s.weightage) || 0), 0);
   const isWeightValid = newSubtasks.length === 0 || totalWeight === 100;
 
-  const handleCreateTask = async (e?: React.FormEvent | React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newTitle || !isWeightValid) return;
     setCreatingTask(true);
 
@@ -707,14 +704,7 @@ export default function TasksScreen({ tasks, onRefreshTasks }: TasksScreenProps)
               </button>
             </div>
             
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleCreateTask(e);
-              }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-            >
+            <form onSubmit={handleCreateTask} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* Left Column: Basic Info & Scheduling */}
               <div className="space-y-6">
@@ -969,11 +959,6 @@ export default function TasksScreen({ tasks, onRefreshTasks }: TasksScreenProps)
                 </button>
                 <button
                   type="submit"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleCreateTask(e);
-                  }}
                   disabled={creatingTask || !isWeightValid}
                   className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-sm text-white font-bold rounded-xl cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-500/20"
                 >

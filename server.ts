@@ -896,50 +896,10 @@ async function startServer() {
   // ==========================================================
 
   // Get Tasks
-  app.get("/api/tasks", async (req, res) => {
-    const userId = getAuthorizedUserId(req);
+  app.get("/api/tasks", (req, res) => {
+    const authHeader = req.headers.authorization;
+    const userId = authHeader?.replace("Bearer ", "");
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (!error && data && data.length > 0) {
-        const tasks = data.map((row: any) => ({
-          id: row.id,
-          userId: row.user_id || row.userId,
-          title: row.title,
-          description: row.description || '',
-          deadline: row.deadline || new Date().toISOString(),
-          priority: row.priority || 'Medium',
-          status: row.status || 'Pending',
-          estimatedTime: Number(row.estimated_time ?? row.estimatedTime) || 60,
-          category: row.category || 'Work',
-          tags: Array.isArray(row.tags) ? row.tags : [],
-          difficulty: row.difficulty || 'Medium',
-          preferredWorkingTime: row.preferred_working_time || row.preferredWorkingTime,
-          isRecurring: !!(row.is_recurring ?? row.isRecurring),
-          recurringFrequency: row.recurring_frequency || row.recurringFrequency,
-          progress: Number(row.progress) || 0,
-          priorityScore: Number(row.priority_score ?? row.priorityScore) || 50,
-          deadlineRisk: Number(row.deadline_risk ?? row.deadlineRisk) || 30,
-          estimatedEffort: row.estimated_effort ?? row.estimatedEffort,
-          aiSuggestedPriority: row.ai_suggested_priority || row.aiSuggestedPriority,
-          aiSuggestedTimeBlock: row.ai_suggested_time_block || row.aiSuggestedTimeBlock,
-          projectId: row.project_id || row.projectId,
-          teamId: row.team_id || row.teamId,
-          organizationId: row.organization_id || row.organizationId,
-          missedTaskHistory: !!(row.missed_task_history ?? row.missedTaskHistory),
-          createdAt: row.created_at || row.createdAt || new Date().toISOString(),
-          updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
-        }));
-        return res.json(tasks);
-      }
-    } catch (err) {
-      console.warn('Supabase fetch failed, fallback to local db:', err);
-    }
 
     const db = readDb();
     const userTasks = db.tasks.filter(t => t.userId === userId);
@@ -960,32 +920,8 @@ async function startServer() {
 
     if (!title) return res.status(400).json({ error: "Task title is required." });
 
+    const db = readDb();
     const taskId = `t-${Date.now()}`;
-    let progress = 0;
-    const subtaskRecords: Subtask[] = [];
-
-    if (Array.isArray(subtasks) && subtasks.length > 0) {
-      const totalWeight = subtasks.reduce((sum, s) => sum + (Number(s.weightage) || 0), 0);
-      if (Math.abs(totalWeight - 100) > 0.1) {
-        return res.status(400).json({ error: "Total subtask weightage must equal 100%." });
-      }
-
-      subtasks.forEach((s, idx) => {
-        subtaskRecords.push({
-          id: `st-${Date.now()}-${idx}`,
-          taskId,
-          title: s.title || `Subtask ${idx + 1}`,
-          description: s.description || '',
-          completed: !!s.completed,
-          estimatedTime: Number(s.estimatedTime) || 15,
-          deadline: s.deadline,
-          priority: s.priority,
-          weightage: Number(s.weightage) || 0,
-          order: idx + 1
-        });
-      });
-      progress = subtaskRecords.filter(s => s.completed).reduce((sum, s) => sum + s.weightage, 0);
-    }
 
     const newTask: Task = {
       id: taskId,
@@ -994,7 +930,7 @@ async function startServer() {
       description: description || "",
       deadline: deadline || new Date(Date.now() + 24*3600*1000).toISOString(),
       priority: priority || "Medium",
-      status: progress === 100 ? "Completed" : "Pending",
+      status: "Pending",
       estimatedTime: Number(estimatedTime) || 60,
       category: category || "Work",
       tags: tags || [],
@@ -1002,7 +938,7 @@ async function startServer() {
       preferredWorkingTime,
       isRecurring: !!isRecurring,
       recurringFrequency,
-      progress,
+      progress: 0,
       priorityScore: 50,
       deadlineRisk: 30,
       estimatedEffort,
@@ -1016,47 +952,34 @@ async function startServer() {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Try Supabase Insert
-    try {
-      await supabase.from('tasks').insert({
-        id: newTask.id,
-        user_id: newTask.userId,
-        title: newTask.title,
-        description: newTask.description || '',
-        deadline: newTask.deadline,
-        priority: newTask.priority,
-        status: newTask.status,
-        estimated_time: newTask.estimatedTime,
-        category: newTask.category,
-        tags: newTask.tags,
-        difficulty: newTask.difficulty,
-        preferred_working_time: newTask.preferredWorkingTime || null,
-        is_recurring: newTask.isRecurring,
-        recurring_frequency: newTask.recurringFrequency || null,
-        progress: newTask.progress,
-        priority_score: newTask.priorityScore,
-        deadline_risk: newTask.deadlineRisk,
-        estimated_effort: newTask.estimatedEffort || null,
-        ai_suggested_priority: newTask.aiSuggestedPriority || null,
-        ai_suggested_time_block: newTask.aiSuggestedTimeBlock || null,
-        project_id: newTask.projectId || null,
-        team_id: newTask.teamId || null,
-        organization_id: newTask.organizationId || null,
-        missed_task_history: newTask.missedTaskHistory,
-        created_at: newTask.createdAt,
-        updated_at: newTask.updatedAt,
-      });
-    } catch (sbErr) {
-      console.warn('Supabase insert failed, backup to db.json:', sbErr);
+    // Save subtasks if provided
+    if (Array.isArray(subtasks) && subtasks.length > 0) {
+      const totalWeight = subtasks.reduce((sum, s) => sum + (Number(s.weightage) || 0), 0);
+      if (Math.abs(totalWeight - 100) > 0.1) {
+        return res.status(400).json({ error: "Total subtask weightage must equal 100%." });
+      }
+
+      const subtaskRecords: Subtask[] = subtasks.map((s, idx) => ({
+        id: `st-${Date.now()}-${idx}`,
+        taskId,
+        title: s.title,
+        description: s.description,
+        completed: !!s.completed,
+        estimatedTime: Number(s.estimatedTime) || 15,
+        deadline: s.deadline,
+        priority: s.priority,
+        weightage: Number(s.weightage) || 0,
+        order: idx + 1
+      }));
+      db.subtasks.push(...subtaskRecords);
+      newTask.progress = subtaskRecords.filter(s => s.completed).reduce((sum, s) => sum + s.weightage, 0);
     }
 
-    // 2. Save to local db.json sync
-    const db = readDb();
     db.tasks.push(newTask);
-    if (subtaskRecords.length > 0) {
-      db.subtasks.push(...subtaskRecords);
-    }
     createActivityLog(db, userId, 'Created task', `Added task "${newTask.title}"`, newTask.organizationId, newTask.teamId, newTask.projectId);
+    writeDb(db);
+
+    await syncTaskChanges(db, userId, taskId);
     writeDb(db);
 
     sendNotification(db, userId, 'New Task Created', `Task “${newTask.title}” was added to your workflow.`, 'success');

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { getAuthorizedUserId } from '../middleware/auth.js';
-import { readDb, writeDb } from '../db.js';
+import { getAuthorizedUserId } from '../middleware/auth';
+import { readDb, writeDb } from '../db';
 import {
   prioritizeTasks,
   generateSubtasks,
@@ -12,8 +12,8 @@ import {
   runEmergencyRescue,
   computeConsistencyMetrics,
   analyzeAndEnhanceTask
-} from '../ai.js';
-import { Goal } from '../../src/types.js';
+} from '../ai';
+import { Goal } from '../../src/types';
 
 const router = Router();
 

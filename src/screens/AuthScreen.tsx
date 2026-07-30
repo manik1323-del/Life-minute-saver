@@ -217,60 +217,18 @@ export default function AuthScreen() {
               </>
             )}
           </button>
-
-          {/* Quick Admin Sign In Button */}
-          <div className="pt-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={async () => {
-                setError(null);
-                setSuccess(null);
-                setLoading(true);
-                setEmail('admin@example.com');
-                setPassword('admin123password');
-                try {
-                  await login('admin@example.com', 'admin123password');
-                } catch (err: any) {
-                  setError(err.message || 'Admin sign in failed');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              className="w-full bg-gradient-to-r from-amber-500 to-violet-600 hover:from-amber-600 hover:to-violet-700 active:scale-[0.99] font-bold text-white rounded-lg py-2.5 text-xs tracking-wide uppercase transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
-            >
-              <Sparkles className="w-4 h-4 animate-spin" />
-              <span>⚡ One-Click Admin Sign In</span>
-            </button>
-          </div>
-
+ 
         </form>
-
-        {/* Preset Credentials Badges */}
-        <div className="mt-6 pt-4 border-t border-theme-border flex flex-col items-center gap-2 text-center">
-          <span className="text-xs font-semibold text-theme-text-muted">Preset Test Credentials:</span>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@example.com');
-                setPassword('admin123password');
-              }}
-              className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded text-[11px] text-amber-400 font-mono transition-colors cursor-pointer"
-            >
-              Admin: admin@example.com
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('demo@example.com');
-                setPassword('demo123password');
-              }}
-              className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded text-[11px] text-indigo-400 font-mono transition-colors cursor-pointer"
-            >
-              User: demo@example.com
-            </button>
+ 
+        {/* Demo info overlay */}
+        <div className="mt-6 pt-4 border-t border-theme-border flex flex-col items-center gap-1.5 text-center">
+          <div className="flex items-center gap-1.5 text-xs text-theme-text-muted">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+            <span>Sandbox Login Enabled: Any email works!</span>
           </div>
+          <p className="text-[10px] text-theme-text-muted/80 leading-normal max-w-xs">
+            Demo account will automatically seed real calendar schedules, interactive workloads, and analytics.
+          </p>
         </div>
  
       </motion.div>
