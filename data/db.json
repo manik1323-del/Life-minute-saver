@@ -179,11 +179,11 @@
       "password": "$2b$10$6w0kROxxCDW0vVlxyvsa8.nVhcaspst87XSAUAZHsKd65LyoO7E7u",
       "role": "user",
       "refreshTokens": [
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4MzU5MjYwNywiZXhwIjoxNzg0MTk3NDA3fQ.7UWJRA5dYlB85-D1rP7WJNBMZ3G8BC1ug86L405QXg8",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4MzY2OTgwNCwiZXhwIjoxNzg0Mjc0NjA0fQ.10fK6l8W0oe73gqFGeQHUBr43M94hXxgmsWYw908AGI",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4NDYzMDk0NywiZXhwIjoxNzg1MjM1NzQ3fQ.yZJaSRMJIi3Doep99F78Is0vGjMjVHiFZMYUNWoWgRU",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4NTEzMTc0MiwiZXhwIjoxNzg1NzM2NTQyfQ.Os0KxgfksMWSlNEYuenfUjDn0TutMxZ_4YvWTk3x29o",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4NTEzMzI1OCwiZXhwIjoxNzg1NzM4MDU4fQ.0laY4sXvzl0rMQWGW_Kw67OUlTqgNk5c6JGqDWizDCo"
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4NTEzMzI1OCwiZXhwIjoxNzg1NzM4MDU4fQ.0laY4sXvzl0rMQWGW_Kw67OUlTqgNk5c6JGqDWizDCo",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InUtMTc4Mjg4MTc5MDU3MiIsImlhdCI6MTc4NTQxNTg5MCwiZXhwIjoxNzg2MDIwNjkwfQ.wdG1tp6mElbOpILmqn_Y-rrd2TZHVX8xvpTPJBUhI7A"
       ],
       "organizationIds": [
         "org-1782881790572",
@@ -6747,6 +6747,26 @@
       "updatedAt": "2026-07-27T06:21:15.960Z",
       "goalId": "g-1785133504317",
       "milestoneId": "m-1785133504317-0"
+    },
+    {
+      "id": "t-1785415902429",
+      "userId": "u-1782881790572",
+      "title": "ss",
+      "description": "ss",
+      "deadline": "2026-07-31T12:51:00.000Z",
+      "priority": "Medium",
+      "status": "Pending",
+      "estimatedTime": 60,
+      "category": "Work",
+      "tags": [],
+      "difficulty": "Medium",
+      "isRecurring": false,
+      "progress": 0,
+      "priorityScore": 50,
+      "deadlineRisk": 30,
+      "missedTaskHistory": false,
+      "createdAt": "2026-07-30T12:51:42.430Z",
+      "updatedAt": "2026-07-30T12:51:42.430Z"
     }
   ],
   "subtasks": [
@@ -12601,6 +12621,15 @@
       "type": "success",
       "read": false,
       "createdAt": "2026-07-27T06:25:19.283Z"
+    },
+    {
+      "id": "n-1785415902437-ze227b",
+      "userId": "u-1782881790572",
+      "title": "Schedule updated",
+      "message": "Your schedule has been refreshed automatically based on the latest tasks, habits, and calendar changes.",
+      "type": "success",
+      "read": false,
+      "createdAt": "2026-07-30T12:51:42.437Z"
     }
   ],
   "schedules": [
@@ -15452,6 +15481,28 @@
         }
       ],
       "createdAt": "2026-07-27T06:25:19.283Z"
+    },
+    {
+      "id": "s-auto-1785415902437",
+      "userId": "u-1782881790572",
+      "date": "2026-07-30",
+      "items": [
+        {
+          "id": "s-item-ai-1785415907147-0",
+          "title": "Weekly Standup Sync",
+          "startTime": "2026-07-01T04:30:00.000Z",
+          "endTime": "2026-07-01T05:30:00.000Z",
+          "type": "meeting"
+        },
+        {
+          "id": "s-item-ai-1785415907147-1",
+          "title": "Product Review Meeting",
+          "startTime": "2026-07-02T08:30:00.000Z",
+          "endTime": "2026-07-02T10:00:00.000Z",
+          "type": "meeting"
+        }
+      ],
+      "createdAt": "2026-07-30T12:51:42.437Z"
     }
   ],
   "analytics": [
@@ -29607,6 +29658,13 @@
       "action": "Created organization",
       "detail": "Organization s created",
       "createdAt": "2026-07-27T06:25:14.015Z"
+    },
+    {
+      "id": "al-1785415902431-0y1vd1",
+      "userId": "u-1782881790572",
+      "action": "Created task",
+      "detail": "Added task \"ss\"",
+      "createdAt": "2026-07-30T12:51:42.431Z"
     }
   ],
   "invitations": [],
